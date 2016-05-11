@@ -189,7 +189,12 @@ xgb.ppredict1 <- function(bstfile,ddata,ncol=100) {
   require(xgboost)
   
   bst.pre <- xgb.load(bstfile)
-  pre.one <- matrix(predict(bst.pre,ddata),ncol=ncol,nrow=nrow(ddata),byrow = TRUE)
+  #print(c("ppedict1 -->",ddata,nrow(ddata)))
+  #print("--")
+  pre.one <- predict(bst.pre,ddata)
+  #print("-- --")
+  pre.one <- matrix(pre.one,ncol=ncol,nrow=nrow(ddata),byrow = TRUE)
+  #print("-- -- --")
   return(pre.one)
   
 }
