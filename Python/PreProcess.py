@@ -82,14 +82,86 @@ class PreTrain (BigCSVFile) :
             print("(0,1)=",i0,i1)
             return
         
+class PreTest (BigCSVFile) :
+
+    debug     = False
+
+    inputFile   = ""
+    #outBook0    = "../Data/testBook0.csv"
+    outBook1    = "../Data/testBook1.csv"
+    
+    baseField   = 1
+    
+    #numBook     = 18+baseField
+    numDateTime = 0+baseField
+    numDateBeg  = 11+baseField
+    numDateEnd  = 12+baseField
+    def __init__ (self,input) :
+        self.inputFile = input;
+        self.readHeader(input)
+    def readSplitIsBooking(self) :
+        with open(self.inputFile, newline='') as csvfile:
+            reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+            i0, i1 = 0,0
+            for row in reader :
+                 if reader.line_num==1:
+                     #wrt0 = open(self.outBook0,"w")
+                     wrt1 = open(self.outBook1,"w")
+                     #out0 = csv.writer(wrt0,delimiter=',', quotechar='|')
+                     out1 = csv.writer(wrt1,delimiter=',', quotechar='|')
+                     h01  = ["id"]+["dty",'dtm','dtd','dtw','dth','dtm']+row[(self.numDateTime+1):self.numDateBeg]+ \
+                            ["dt0y",'dt0m','dt0d','dt0w']+ \
+                            ["dt1y",'dt1m','dt1d','dt1w']+ \
+                            ['dt01n']+row[(self.numDateEnd+1):]
+                     #out0.writerow(h01)
+                     out1.writerow(h01)
+                     continue;
+                 try :
+                     dateTime = datetime.datetime.strptime(row[self.numDateTime],"%Y-%m-%d %H:%M:%S")
+                 except :
+                     dateTime = datetime.datetime(2000,1,1);
+                 try :
+                     dateBeg  = datetime.datetime.strptime(row[self.numDateBeg],"%Y-%m-%d")
+                 except :
+                     dateBeg  = datetime.datetime(2000,1,1);
+                 try :
+                     dateEnd  = datetime.datetime.strptime(row[self.numDateBeg],"%Y-%m-%d")
+                 except :
+                     dateEnd  = datetime.datetime(2000,1,1);
+                     
+                 if self.debug : print(dateTime,dateBeg,dateEnd)
+                 dateTimeV= [dateTime.year,dateTime.month,dateTime.day,dateTime.weekday(),
+                             dateTime.hour,dateTime.minute]
+                 dateBegV = [dateBeg.year,dateBeg.month,dateBeg.day,dateBeg.weekday()]
+                 dateEndV = [dateEnd.year,dateEnd.month,dateEnd.day,dateEnd.weekday()]
+                 datesNN  = [(dateEnd-dateBeg).days+1]
+                 rowX = row[0:self.numDateTime]+dateTimeV+row[(self.numDateTime+1):self.numDateBeg]+dateBegV+dateEndV+datesNN+row[(self.numDateEnd+1):]
+                 if self.debug : print(dateTimeV,dateBegV,dateEndV,datesNN)
+                 """
+                 if row[self.numBook]=='0' :
+                     out0.writerow(rowX); i0 +=1
+                 else :
+                     out1.writerow(rowX); i1 +=1
+                 """
+                 out1.writerow(rowX); i1 +=1
+                 #if reader.line_num>1000 : break
+                 if reader.line_num%100000==0 : print(reader.line_num)
+            csvfile.close();
+            #wrt0.close();
+            wrt1.close();
+            print("(0,1)=",i0,i1)
+            return
+        
 
 fTrain = '../Data/train.csv';
 fTest  = '../Data/test.csv';
 
-strTest  = BigCSVFile(fTest);
-print(strTest.count(),strTest.getNames())
 print('-'*50)
+
 strTrain = PreTrain(fTrain);
 print(strTrain.count(),strTrain.getNames())
-strTrain.readSplitIsBooking();
+#strTrain.readSplitIsBooking();
 
+strTest = PreTest(fTest);
+print(strTest.count(),strTest.getNames())
+strTest.readSplitIsBooking();

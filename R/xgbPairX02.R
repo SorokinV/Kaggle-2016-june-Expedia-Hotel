@@ -124,6 +124,7 @@ rm(xx.train)
 #----------------------- function --------------------------------
 
 xgb.ttrain <- function(ddata,llabel,eta=0.1,nrounds=50,multi=100) {
+  require(xgboost)
 
   ddata$orig_destination_distance[is.na(ddata$orig_destination_distance)] <- 0
   

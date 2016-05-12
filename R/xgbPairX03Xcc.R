@@ -1,9 +1,8 @@
 require(xgboost)
 
-df.city = buildCitiesList(c(3,46,77,69,205))
-df.city = buildCitiesList(c(3))
+#df.city = buildCitiesList(c(3,46,69))
 
-df.city = buildCitiesList(c(77))
+#df.city = buildCitiesList(c(66),dir.files = "./Temp/BST-Cities-66/")
 
 df.true = (dtrain.b1$user_location_country==77)
 df.data = subset(dtrain.b1[1:(length(dtrain.b1)-1)],df.true)
@@ -102,7 +101,6 @@ buildCitiesCountry <- function(user_l_country,
   base.list    = setdiff(base.list,base.exclude);
   
   #base.list   = base.list[c(1:20)]
-  print(c("size -->",length(base.list)))
   
   bst.files    = c();
   aaccuracy    = c();
@@ -115,7 +113,7 @@ buildCitiesCountry <- function(user_l_country,
     i.set = i.set+1;
     if (i.set>length(base.list)) break;
     tmp.list   = c(i.set)
-    print(c("repeat1-->",tmp.list,length(base.list),length(trueCountry[trueCountry])))
+    print(c("repeat1 (i.set,length,size) -->",tmp.list,length(base.list),length(trueCountry[trueCountry])))
     i.train    = subset(dtrain.b1,
                         (trueCountry&(user_location_city==base.list[i.set])))
     
@@ -132,7 +130,7 @@ buildCitiesCountry <- function(user_l_country,
     print (sprintf("%s work i=%i nrow=%i",
                    format(Sys.time(),"%Y-%m-%d %H:%M:%S"),
                    i.set,nrow(i.train)));
-    print(base.list[tmp.list])
+    print(c("min,max,len -->",min(base.list[tmp.list]),max(base.list[tmp.list]),length(tmp.list)))
     
     if (nrow(i.train)>0) {
       
