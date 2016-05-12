@@ -17,7 +17,47 @@ tmp.list0     <- setdiff(tmp.countries,tmp.exlude)
 
 tmp.res = predictTestList(df.index,tmp.list0,append="./Temp/df-result0.csv")
 
+#tmp.res = predictTestList(df.index,c(3),  append="./Temp/df-result-003.csv")
+#tmp.res = predictTestList(df.index,c(46), append="./Temp/df-result-046.csv")
+#tmp.res = predictTestList(df.index,c(69), append="./Temp/df-result-069.csv")
+#tmp.res = predictTestList(df.index,c(77), append="./Temp/df-result-077.csv")
+#tmp.res = predictTestList(df.index,c(205),append="./Temp/df-result-205.csv")
+
+#dtest.66 = dtest.b1
+
+dtest.66.true = rep(FALSE,times=nrow(dtest.66))
+i.step    = 200000
+
+i0 = 1;
+repeat {
+  i1 = min(i0+i.step,nrow(dtest.66))
+  tmp.true        <- dtest.66.true
+  tmp.true[i0:i1] <- TRUE
+  dtest.b1 = subset(dtest.66,tmp.true)
+  tmp.res = predictTestList(df.index,c(66), append="./Temp/df-result-066.csv")
+  i0 = i1+1;
+  if (i0>nrow(dtest.66)) break;
+}
+
+#tmp.res = predictTestList(df.index,c(66), append="./Temp/df-result-066.csv")
+
+tmp.res = read.csv("./Temp/df-result0.csv")
+tmp.tmp = read.csv("./Temp/df-result-003.csv"); tmp.res = rbind(tmp.res,tmp.tmp)
+tmp.tmp = read.csv("./Temp/df-result-046.csv"); tmp.res = rbind(tmp.res,tmp.tmp)
+tmp.tmp = read.csv("./Temp/df-result-066.csv"); tmp.res = rbind(tmp.res,tmp.tmp)
+tmp.tmp = read.csv("./Temp/df-result-069.csv"); tmp.res = rbind(tmp.res,tmp.tmp)
+tmp.tmp = read.csv("./Temp/df-result-077.csv"); tmp.res = rbind(tmp.res,tmp.tmp)
+tmp.tmp = read.csv("./Temp/df-result-205.csv"); tmp.res = rbind(tmp.res,tmp.tmp)
+
 head(tmp.res); nrow(tmp.res)
+write.csv(tmp.res,file="./Temp/df-result.csv",row.names = FALSE)
+
+require(plyr)
+
+res = arrange(tmp.res,id); head(res); tail(res)
+res$country =NULL
+write.csv(res,file="./Temp/df-result1.csv",row.names = FALSE)
+
 
 stop("normal")
 
