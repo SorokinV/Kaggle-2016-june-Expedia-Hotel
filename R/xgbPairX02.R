@@ -185,17 +185,15 @@ xgb.ppredict <- function(bstfiles,bstlists,ddata,ncol=100) {
   
 }
 
-xgb.ppredict1 <- function(bstfile,ddata,ncol=100) {
+xgb.ppredict1 <- function(bstfile,ddata,ncol=100,debug=FALSE) {
   
   require(xgboost)
   
+  if (debug) print(sprintf("xgb.ppredict1+ --> bstfile= %s, nrow=%i",bstfile,nrow(ddata)))
   bst.pre <- xgb.load(bstfile)
-  #print(c("ppedict1 -->",ddata,nrow(ddata)))
-  #print("--")
   pre.one <- predict(bst.pre,ddata)
-  #print("-- --")
   pre.one <- matrix(pre.one,ncol=ncol,nrow=nrow(ddata),byrow = TRUE)
-  #print("-- -- --")
+  if (debug) print(sprintf("xgn.ppredict1- --> nrow(res)=%i",nrow(pre.one)))
   return(pre.one)
   
 }

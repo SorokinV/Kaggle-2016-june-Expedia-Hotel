@@ -39,32 +39,75 @@ predictData     <- function (index,data) {
 
 predictCountry  <- function (index,ic,data) {
   
-  cities        <- sort(unique(data$user_location_city))
-  indCities     <- sort(unique(index$city[index$country==ic]))
   xdata         <- as.matrix(data)
   xdata[is.na(xdata)] <- 0
   xdata         <- xgb.DMatrix(xdata)
   
-  if (length(indCities)==1) {
-    bst.file <- as.character(index$files[index$country==ic]); 
-#    print(c("1-->",bst.file,dim(xdata)))
-    res = xgb.ppredict1(bst.file,xdata)
-    return(res)
+  res           <- matrix(0,ncol=100,nrow=nrow(data))
+  
+  if (!all(index$country==ic)) {
+     tmp.res = predictCountryFalse(index,ic,xdata);
+     return(tmp.res)
   }
   
-  res           <- matrix(0,ncol=100,nrow=nrow(data))
-  for (icts in cities) {
-    icTrue      <- (data$user_location_city==icts)
-    bst.file    <- as.character(index$files[(index$country==ic)&(index$city==icts)]); 
-    
-#    print(c("2-->",bst.file,icts,"--",cities,indCities,dim(data),length(icTrue[icTrue==TRUE])))
-    
-    tmp.res     <- xgb.ppredict1(bst.file,slice(xdata,c(1:nrow(data))[icTrue]))
+  cities        <- sort(unique(data$user_location_city))
+  indCities     <- sort(unique(index$city[index$country==ic]))
+  
+  cFalse        <- setdiff(cities,indCities) # no in  cities list
+  cTrue         <- setdiff(cities,cFalse)    # yes in cities list
+  
+  if (length(cFalse)>0) {
+    icTrue = rep(TRUE,times=nrow(data))
+    for (icts in cFalse) icTrue = (icTrue & (data$user_location_city==icts))
+    tmp.res = predictCitiesFalse (index,ic,slice(xdata,c(1:nrow(data))[icTrue]));
     res[icTrue,] <- tmp.res[,]
+  };
+  
+
+  if (length(cTrue)>0) {
+    for (icts in cTrue) {
+      icTrue      <- (data$user_location_city==icts)
+      bst.file    <- as.character(index$files[(index$country==ic)&(index$city==icts)]); 
+      tmp.res     <- xgb.ppredict1(bst.file,slice(xdata,c(1:nrow(data))[icTrue]),debug=FALSE)
+      res[icTrue,] <- tmp.res[,]
+    }
   }
   
   return (res)
+  
 }
+
+predictCitiesFalse <- function(index,ic,xgb.mmatrix) {
+  
+  tmp.index  = subset(index,country==ic)
+  
+  stopifnot(!is.null(tmp.index))
+  
+  bst.file = as.character(tmp.index$files[tmp.index$city==-1])
+  if (is.null(bst.file)) {
+    bst.file = as.character(tmp.index$files[which.max(tmp.index$length)])
+  }
+  
+  stopifnot(!is.null(bst.file))
+  
+  res = xgb.ppredict1(bst.file,xgb.mmatrix,debug=FALSE)
+  return(res)
+}
+  
+
+predictCountryFalse <- function(index,ic,xgb.mmatrix) {
+  
+  bst.file   = as.character(index$files[index$country==-1])
+  if (length(bst.file)==0) {
+    bst.file = as.character(index$files[which.max(index$length)])
+  }
+  
+  stopifnot(!is.null(bst.file))
+  
+  res = xgb.ppredict1(bst.file,xgb.mmatrix,debug=FALSE)
+  return(res)
+}
+
 
 #----------------------- function build --------------------------------
 

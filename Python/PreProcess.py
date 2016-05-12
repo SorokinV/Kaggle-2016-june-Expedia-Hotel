@@ -92,7 +92,8 @@ class PreTest (BigCSVFile) :
     
     baseField   = 1
     
-    #numBook     = 18+baseField
+    numBook     = 18+baseField
+    numCnt      = numBook+1
     numDateTime = 0+baseField
     numDateBeg  = 11+baseField
     numDateEnd  = 12+baseField
@@ -102,7 +103,7 @@ class PreTest (BigCSVFile) :
     def readSplitIsBooking(self) :
         with open(self.inputFile, newline='') as csvfile:
             reader = csv.reader(csvfile, delimiter=',', quotechar='|')
-            i0, i1 = 0,0
+            i0, i1, ie = 0,0,0; le =[]
             for row in reader :
                  if reader.line_num==1:
                      #wrt0 = open(self.outBook0,"w")
@@ -112,22 +113,25 @@ class PreTest (BigCSVFile) :
                      h01  = ["id"]+["dty",'dtm','dtd','dtw','dth','dtm']+row[(self.numDateTime+1):self.numDateBeg]+ \
                             ["dt0y",'dt0m','dt0d','dt0w']+ \
                             ["dt1y",'dt1m','dt1d','dt1w']+ \
-                            ['dt01n']+row[(self.numDateEnd+1):]
+                            ['dt01n']+ \
+                            row[(self.numDateEnd+1):self.numBook]+ \
+                            ["is_booking","cnt"]+ \
+                            row[self.numBook:]
                      #out0.writerow(h01)
                      out1.writerow(h01)
                      continue;
                  try :
                      dateTime = datetime.datetime.strptime(row[self.numDateTime],"%Y-%m-%d %H:%M:%S")
                  except :
-                     dateTime = datetime.datetime(2000,1,1);
+                     dateTime = datetime.datetime(2000,1,1); ie+=1; le.append(reader.line_num)
                  try :
                      dateBeg  = datetime.datetime.strptime(row[self.numDateBeg],"%Y-%m-%d")
                  except :
-                     dateBeg  = datetime.datetime(2000,1,1);
+                     dateBeg  = datetime.datetime(2000,1,1); ie+=1; le.append(reader.line_num)
                  try :
                      dateEnd  = datetime.datetime.strptime(row[self.numDateBeg],"%Y-%m-%d")
                  except :
-                     dateEnd  = datetime.datetime(2000,1,1);
+                     dateEnd  = datetime.datetime(2000,1,1); ie+=1; le.append(reader.line_num)
                      
                  if self.debug : print(dateTime,dateBeg,dateEnd)
                  dateTimeV= [dateTime.year,dateTime.month,dateTime.day,dateTime.weekday(),
@@ -135,7 +139,10 @@ class PreTest (BigCSVFile) :
                  dateBegV = [dateBeg.year,dateBeg.month,dateBeg.day,dateBeg.weekday()]
                  dateEndV = [dateEnd.year,dateEnd.month,dateEnd.day,dateEnd.weekday()]
                  datesNN  = [(dateEnd-dateBeg).days+1]
-                 rowX = row[0:self.numDateTime]+dateTimeV+row[(self.numDateTime+1):self.numDateBeg]+dateBegV+dateEndV+datesNN+row[(self.numDateEnd+1):]
+                 rowX = row[0:self.numDateTime]+dateTimeV+row[(self.numDateTime+1):self.numDateBeg]+dateBegV+dateEndV+datesNN+ \
+                            row[(self.numDateEnd+1):self.numBook]+ \
+                            [1,1]+ \
+                            row[self.numBook:]
                  if self.debug : print(dateTimeV,dateBegV,dateEndV,datesNN)
                  """
                  if row[self.numBook]=='0' :
@@ -149,7 +156,7 @@ class PreTest (BigCSVFile) :
             csvfile.close();
             #wrt0.close();
             wrt1.close();
-            print("(0,1)=",i0,i1)
+            print("(0,1,e,list_error)=",i0,i1,ie,le)
             return
         
 
