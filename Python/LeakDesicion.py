@@ -1,201 +1,30 @@
+#
+#  idea from kaggle forum 2016-05-15
+#
+#
 
-import math
 import os.path
 import datetime
 from heapq import nlargest
 
 import sys
-import gc
-
 import csv
-import pickle
-import json
 
-
-class  BigCSVFile :
-    
-    names = [];
-
-    def __init__ (self,input) :
-        self.readHeader(input);
-    def readHeader ( self,input ) :
-        with open(input, newline='') as csvfile:
-            reader = csv.reader(csvfile, delimiter=',', quotechar='|')
-            for row in reader :
-                 if reader.line_num>1: break; # get only header
-                 self.names = row
-            csvfile.close();
-            return
-    def getName ( self,n ) : return(self.names[n]);
-    def name    ( self,n ) : return(self.getName(n));
-    def getNames( self   ) : return(self.names);
-    def count   ( self   ) : return(len(self.names))
-        
-class PreTrain (BigCSVFile) :
-
-    debug     = False
-
-    inputFile = ""
-    outBook0  = "../Data/trainBook0.csv"
-    outBook1  = "../Data/trainBook1.csv"
-
-    outD1     = "../Data/DataLeak/leak1.csv"
-    
-    numBook     = 18
-    numDateTime = 0
-    numDateBeg  = 11
-    numDateEnd  = 12
-
-    # for leak data
-    numULC      =  5  # user_location_city
-    numODD      =  6  # orig_destination_distance
-    numSDI      = 16  # srch_destination_id
-    numHCluster = 23  # hotel_cluster
-    numHCountry = 21  # hotel_country 
-    numHMarket  = 22  # hotel_market
-    
-    def __init__ (self,input) :
-        self.inputFile = input;
-        self.readHeader(input)
-    def readSplitIsBooking(self) :
-        with open(self.inputFile, newline='') as csvfile:
-            reader = csv.reader(csvfile, delimiter=',', quotechar='|')
-            i0, i1, ie = 0,0,0; le =[]
-            for row in reader :
-                 if reader.line_num==1:
-                     wrt0 = open(self.outBook0,"w")
-                     wrt1 = open(self.outBook1,"w")
-                     out0 = csv.writer(wrt0,delimiter=',', quotechar='|')
-                     out1 = csv.writer(wrt1,delimiter=',', quotechar='|')
-                     h01  = ["dty",'dtm','dtd','dtw','dth','dtm']+row[1:self.numDateBeg]+ \
-                            ["dt0y",'dt0m','dt0d','dt0w']+ \
-                            ["dt1y",'dt1m','dt1d','dt1w']+ \
-                            ['dt01n']+row[(self.numDateEnd+1):]
-                     out0.writerow(h01)
-                     out1.writerow(h01)
-                     continue;
-                 dateTime = datetime.datetime.strptime(row[self.numDateTime],"%Y-%m-%d %H:%M:%S")
-                 
-                 try :
-                     dateTime = datetime.datetime.strptime(row[self.numDateTime],"%Y-%m-%d %H:%M:%S")
-                 except :
-                     dateTime = datetime.datetime(2012,1,1); ie+=1; le.append(reader.line_num)
-                 try :
-                     dateBeg  = datetime.datetime.strptime(row[self.numDateBeg],"%Y-%m-%d")
-                 except :
-                     dateBeg  = datetime.datetime(2012,1,1); ie+=1; le.append(reader.line_num)
-                 try :
-                     dateEnd  = datetime.datetime.strptime(row[self.numDateEnd],"%Y-%m-%d")
-                 except :
-                     dateEnd  = datetime.datetime(2012,1,1); ie+=1; le.append(reader.line_num)
-                     
-                 if self.debug : print(dateTime,dateBeg,dateEnd)
-                 
-                 dateTimeV= [dateTime.year,dateTime.month,dateTime.day,dateTime.weekday(),
-                             dateTime.hour,dateTime.minute]
-                 dateBegV = [dateBeg.year,dateBeg.month,dateBeg.day,dateBeg.weekday()]
-                 dateEndV = [dateEnd.year,dateEnd.month,dateEnd.day,dateEnd.weekday()]
-                 
-                 datesNN  = (dateEnd-dateBeg).days+1
-                 if (not((0<=datesNN) and (datesNN<=200))) : datesNN=0
-                 datesNN=[datesNN]
-                 
-                 rowX = dateTimeV+row[1:self.numDateBeg]+dateBegV+dateEndV+datesNN+row[(self.numDateEnd+1):]
-                 if self.debug : print(dateTimeV,dateBegV,dateEndV,datesNN)
-                 if row[self.numBook]=='0' :
-                     out0.writerow(rowX); i0 +=1
-                 else :
-                     out1.writerow(rowX); i1 +=1
-                 #if reader.line_num>100000 : break
-                 if reader.line_num%10000==0 : print(reader.line_num)
-            csvfile.close();
-            wrt0.close();
-            wrt1.close();
-            print("(0,1)=",i0,i1)
-            return
-        
-class PreTest (BigCSVFile) :
-
-    debug     = False
-
-    inputFile   = ""
-    #outBook0    = "../Data/testBook0.csv"
-    outBook1    = "../Data/testBook1.csv"
-    
-    baseField   = 1
-    
-    numBook     = 18+baseField
-    numCnt      = numBook+1
-    numDateTime = 0+baseField
-    numDateBeg  = 11+baseField
-    numDateEnd  = 12+baseField
-    def __init__ (self,input) :
-        self.inputFile = input;
-        self.readHeader(input)
-    def readSplitIsBooking(self) :
-        with open(self.inputFile, newline='') as csvfile:
-            reader = csv.reader(csvfile, delimiter=',', quotechar='|')
-            i0, i1, ie = 0,0,0; le =[]
-            for row in reader :
-                 if reader.line_num==1:
-                     #wrt0 = open(self.outBook0,"w")
-                     wrt1 = open(self.outBook1,"w")
-                     #out0 = csv.writer(wrt0,delimiter=',', quotechar='|')
-                     out1 = csv.writer(wrt1,delimiter=',', quotechar='|')
-                     h01  = ["id"]+["dty",'dtm','dtd','dtw','dth','dtm']+row[(self.numDateTime+1):self.numDateBeg]+ \
-                            ["dt0y",'dt0m','dt0d','dt0w']+ \
-                            ["dt1y",'dt1m','dt1d','dt1w']+ \
-                            ['dt01n']+ \
-                            row[(self.numDateEnd+1):self.numBook]+ \
-                            ["is_booking","cnt"]+ \
-                            row[self.numBook:]
-                     #out0.writerow(h01)
-                     out1.writerow(h01)
-                     continue;
-                 try :
-                     dateTime = datetime.datetime.strptime(row[self.numDateTime],"%Y-%m-%d %H:%M:%S")
-                 except :
-                     dateTime = datetime.datetime(2012,1,1); ie+=1; le.append(reader.line_num)
-                 try :
-                     dateBeg  = datetime.datetime.strptime(row[self.numDateBeg],"%Y-%m-%d")
-                 except :
-                     dateBeg  = datetime.datetime(2012,1,1); ie+=1; le.append(reader.line_num)
-                 try :
-                     dateEnd  = datetime.datetime.strptime(row[self.numDateEnd],"%Y-%m-%d")
-                 except :
-                     dateEnd  = datetime.datetime(2012,1,1); ie+=1; le.append(reader.line_num)
-                     
-                 if self.debug : print(dateTime,dateBeg,dateEnd)
-                 dateTimeV= [dateTime.year,dateTime.month,dateTime.day,dateTime.weekday(),
-                             dateTime.hour,dateTime.minute]
-                 dateBegV = [dateBeg.year,dateBeg.month,dateBeg.day,dateBeg.weekday()]
-                 dateEndV = [dateEnd.year,dateEnd.month,dateEnd.day,dateEnd.weekday()]
-                 
-                 datesNN  = (dateEnd-dateBeg).days+1
-                 if (not((0<=datesNN) and (datesNN<=200))) : datesNN=0
-                 datesNN=[datesNN]
-                 rowX = row[0:self.numDateTime]+dateTimeV+row[(self.numDateTime+1):self.numDateBeg]+dateBegV+dateEndV+datesNN+ \
-                            row[(self.numDateEnd+1):self.numBook]+ \
-                            [1,1]+ \
-                            row[self.numBook:]
-                 if self.debug : print(dateTimeV,dateBegV,dateEndV,datesNN)
-                 """
-                 if row[self.numBook]=='0' :
-                     out0.writerow(rowX); i0 +=1
-                 else :
-                     out1.writerow(rowX); i1 +=1
-                 """
-                 out1.writerow(rowX); i1 +=1
-                 #if reader.line_num>1000 : break
-                 if reader.line_num%100000==0 : print(reader.line_num)
-            csvfile.close();
-            #wrt0.close();
-            wrt1.close();
-            print("(0,1,e,list_error)=",i0,i1,ie,le)
-            return
+#----------------------------------------------------------------
+#
+#  
+#
+#
+#  leak decision with 3 steps:
+#
+#  1. select all keys from test file with initialization dictionary
+#  2. filling dictionary stats on keys/values from train file
+#  3. build decision from test file and filling dictionary
+#
+#
         
 def LeakDecision (trainFile,testFile,
-                  out1,out2,dirDict=None,
+                  out1,out2,
                   debug=False,debugStop=3000000,
                   printOK=False) :
 
@@ -340,31 +169,6 @@ def LeakDecision (trainFile,testFile,
                 #      sys.getsizeof(d3),"-",len(d3),
                 #      sys.getsizeof(d4),"-",len(d4))
                 
-            if ((reader.line_num%3000000==0)) :
-                if ((dirDict!=None)&False) :
-                    print("dumping")
-                    d0 = dict     (line=reader.line_num,
-                                   begin=reader.line_num+1,
-                                   top=topCluster,
-                                   stats=gc.get_stats(),
-                                   count=gc.get_count(),
-                                   thres=gc.get_threshold()
-                                   );
-                    if False :
-                        f = open(os.path.join(dirDict,"d0.dict"),"w")
-                        json.dump(d0,f);
-                        f.close();
-                        f = open(os.path.join(dirDict,"d1.dict"),"wb")
-                        pickle.dump(d1,f); f.close();
-                        f = open(os.path.join(dirDict,"d2.dict"),"w")
-                        json.dump(d2,f); f.close();
-                        f = open(os.path.join(dirDict,"d3.dict"),"w")
-                        json.dump(d3,f); f.close();
-                        f = open(os.path.join(dirDict,"d4.dict"),"w")
-                        json.dump(d4,f); f.close();
-                        print("gc",gc.get_count(),gc.get_stats(),gc.get_threshold());
-                    print("end dumping")
-                
             
         csvfile.close();
 
@@ -385,6 +189,8 @@ def LeakDecision (trainFile,testFile,
     #------------------------------------------------------------------
     #
     # Second and half step: transform and clearing working dictionaries
+    #
+    #   transform values from 100 array[100] to 5-point list
     #
 
     for key in d1.keys() :
@@ -429,6 +235,7 @@ def LeakDecision (trainFile,testFile,
     #-------------------------------------------------------------------------
     #
     # Third step: build finally decision from test file and working dictionaries
+    #
     #
 
     numULC      =  6  # user_location_city
@@ -527,34 +334,23 @@ def LeakDecision (trainFile,testFile,
     return
         
 
-dateBegin = datetime.datetime.now()
+if __name__ == "__main__" :
 
-step   = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+    dateBegin = datetime.datetime.now()
 
-fTrain = '../Data/train.csv';
-fTest  = '../Data/test.csv';
-fOut1  = '../Result/Leak/df-Leak-'   +step+'.csv';
-fOut2  = '../Result/Leak/df-LeakExt-'+step+'.csv';
-fDict  = '../Result/Leak/'
+    step   = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
 
-print('-'*50)
+    fTrain = '../Data/train.csv';  # train file
+    fTest  = '../Data/test.csv';   # test  file
+    fOut1  = '../Result/Leak/df-Leak-'   +step+'.csv';  # decision
+    fOut2  = '../Result/Leak/df-LeakExt-'+step+'.csv';  # decision with case marks
 
-if True :
-    strTrain = PreTrain(fTrain);
-    print("train:",strTrain.count(),"\n",list(enumerate(strTrain.getNames())))
-    #strTrain.readSplitIsBooking();
+    LeakDecision(fTrain,fTest,fOut1,fOut2,
+                 debug=False,debugStop=2000000)
 
-if True :
-    strTest = PreTest(fTest);
-    print("test:",strTest.count(), "\n",list(enumerate(strTest.getNames())))
-    #strTest.readSplitIsBooking();
+    dateEnd = datetime.datetime.now()
 
-LeakDecision(fTrain,fTest,fOut1,fOut2,dirDict=fDict,
-             debug=False,debugStop=2000000)
-
-dateEnd = datetime.datetime.now()
-
-print("begin :",dateBegin.strftime("%Y-%m-%d %H:%M:%S"))
-print("end   :",dateEnd.strftime("%Y-%m-%d %H:%M:%S"))
+    print("begin :",dateBegin.strftime("%Y-%m-%d %H:%M:%S"))
+    print("end   :",dateEnd.strftime("%Y-%m-%d %H:%M:%S"))
 
 
