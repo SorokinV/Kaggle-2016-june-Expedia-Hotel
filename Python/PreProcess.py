@@ -63,8 +63,8 @@ class PreTrain (BigCSVFile) :
             i0, i1, ie = 0,0,0; le =[]
             for row in reader :
                  if reader.line_num==1:
-                     wrt0 = open(self.outBook0,"w")
-                     wrt1 = open(self.outBook1,"w")
+                     wrt0 = open(self.outBook0,"w",newline='')
+                     wrt1 = open(self.outBook1,"w",newline='')
                      out0 = csv.writer(wrt0,delimiter=',', quotechar='|')
                      out1 = csv.writer(wrt1,delimiter=',', quotechar='|')
                      h01  = ["dty",'dtm','dtd','dtw','dth','dtm']+row[1:self.numDateBeg]+ \
@@ -120,7 +120,7 @@ class PreTrain (BigCSVFile) :
             i0, ie = 0,0; le =[]
             for row in reader :
                  if reader.line_num==1:
-                     wrt0 = open(outBook,"w")
+                     wrt0 = open(outBook,"w",newline='')
                      out0 = csv.writer(wrt0,delimiter=',', quotechar='|')
                      h01  = ["dty",'dtm','dtd','dtw','dth','dtmi']+ \
                              row[1:self.numDateBeg]+ \
@@ -159,7 +159,9 @@ class PreTrain (BigCSVFile) :
                  if self.debug : print(dateTimeV,dateBegV,dateEndV,datesNN)
                  out0.writerow(rowX); i0 +=1
                  if (debug and (reader.line_num>debugStop)) : break
-                 if reader.line_num%100000==0 : print(reader.line_num,"\t",datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                 if reader.line_num%100000==0 :
+                     print(reader.line_num,"\t",datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                     wrt0.flush()
             csvfile.close();
             wrt0.close();
             print("(0,1)=",i0,ie)
@@ -175,12 +177,12 @@ class PreTrain (BigCSVFile) :
                  if row==[] : continue
                  #print(row)
                  if reader.line_num==1:
-                     wrt0 = open(outSet,"w")
+                     wrt0 = open(outSet,"w",newline='')
                      out0 = csv.writer(wrt0,delimiter=',', quotechar='|')
                      out0.writerow(row)
                      continue;
                  i0 += 1; 
-                 if (int(row[numDtmi]) == dtmi) : out0.writerow(row); i1 += 1;
+                 if (int(row[numDtmi]) in dtmi) : out0.writerow(row); i1 += 1;
                  
                  if (debug and (reader.line_num>debugStop)) : break
                  if reader.line_num%100000==0 :
@@ -218,7 +220,7 @@ class PreTest (BigCSVFile) :
             for row in reader :
                  if reader.line_num==1:
                      #wrt0 = open(self.outBook0,"w")
-                     wrt1 = open(outBook,"w")
+                     wrt1 = open(outBook,"w",newline='')
                      #out0 = csv.writer(wrt0,delimiter=',', quotechar='|')
                      out1 = csv.writer(wrt1,delimiter=',', quotechar='|')
                      h01  = ["id"]+["dty",'dtm','dtd','dtw','dth','dtmi']+row[(self.numDateTime+1):self.numDateBeg]+ \
@@ -266,7 +268,9 @@ class PreTest (BigCSVFile) :
                  """
                  out1.writerow(rowX); i1 +=1
                  if (debug and (reader.line_num>debugStop)) : break
-                 if reader.line_num%100000==0 : print(reader.line_num,"\t",datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                 if reader.line_num%100000==0 :
+                     print(reader.line_num,"\t",datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                     wrt1.flush()
             csvfile.close();
             #wrt0.close();
             wrt1.close();
@@ -293,9 +297,9 @@ if (__name__=="__main__") :
         strTrain = PreTrain(fTrain);
         print("train:",strTrain.count(),"\n",list(enumerate(strTrain.getNames())))
         #strTrain.transform(fTrainExt,debug=False);
-        strTrain.select(13,fTrainExt,fTrainExtMin,debug=False)
+        strTrain.select([13,43,0,23,53],fTrainExt,fTrainExtMin,debug=False)
 
     if False :
         strTest = PreTest(fTest);
         print("test:",strTest.count(), "\n",list(enumerate(strTest.getNames())))
-        strTest.transform(fTestExt,debug=False);
+        strTest.transform(fTestExt);
